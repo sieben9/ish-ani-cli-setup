@@ -66,6 +66,7 @@ install_ani_cli() {
         else
             log_info "ani-cli is installed, but not from a Git repository. Reinstalling..."
             rm -f /usr/local/bin/ani-cli
+            [ -d /tmp/ani-cli ] && rm -rf /tmp/ani-cli
             git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
             install -Dm755 "/tmp/ani-cli/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
             rm -rf /tmp/ani-cli
@@ -73,8 +74,9 @@ install_ani_cli() {
     else
         # ani-cli is not installed; proceed with fresh installation
         log_info "ani-cli not found, cloning repository..."
+        [ -d /tmp/ani-cli ] && rm -rf /tmp/ani-cli
         git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
-        install -Dm755 "/tmp/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
+        install -Dm755 "/tmp/ani-cli/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
         rm -rf /tmp/ani-cli
     fi
 }
