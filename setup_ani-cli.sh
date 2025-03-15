@@ -109,11 +109,7 @@ configure_ani_cli() {
 # Reload shell configuration to apply changes immediately
 reload_shell_config() {
     log_info "Reloading shell configuration..."
-    if [ -n "$BASH_VERSION" ]; then
-        . "$HOME/.bashrc"
-    else
-        . "$HOME/.profile"
-    fi
+    [ -r "$HOME/.profile" ] && . "$HOME/.profile"
 }
 
 # Print final installation summary
