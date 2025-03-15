@@ -1,81 +1,131 @@
 #!/bin/sh
+set -eu
 
-# ish ani-cli setup for vlc 
+# ani-cli setup script for VLC and optional download mode (-D)
 
-log_info() { echo "[INFO] $1"; }
+log_info() { 
+    printf "[INFO] %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1"
+}
+
 log_error() { 
-    echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') $1" >&2 
+    printf "[ERROR] %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1" >&2
     exit 1
 }
 
-# Install required packages
-install_packages() {
-    log_info "Updating package list..."
-    apk update || log_error "Failed to update package list."
+# Ensure the script is executed as root
+if [ "$(id -u)" -ne 0 ]; then
+    log_error "This script must be run as root. Exiting..."
+fi
 
-    log_info "Installing required packages..."
-apk add --no-cache bash curl ffmpeg aria2 wget python3 py3-pip git || log_error "Failed to install packages."
+# fzf-based function for interactive Yes/No prompts
+prompt_input() {
+    local question="$1"
+    local options="Yes\nNo"
+    local result
+
+    # Display options in fzf and capture user selection
+    result=$(echo -e "$options" | fzf --prompt "$question: " --height=5 --border --layout=reverse)
+    
+    echo "$result"
 }
 
-# Install yt-dlp
+# Install required system packages
+install_packages() {
+    log_info "Updating and installing required packages..."
+    apk add --no-cache --update bash curl ffmpeg aria2 wget python3 py3-pip git fzf || log_error "Failed to install packages."
+}
+
+# Install yt-dlp if not already installed
 install_yt_dlp() {
     log_info "Checking for yt-dlp..."
     if ! command -v yt-dlp >/dev/null 2>&1; then
         log_info "yt-dlp not found, installing..."
-        pip install --upgrade yt-dlp || log_error "Failed to install yt-dlp."
-
-        # Ensure yt-dlp is accessible globally
-        ln -sf "$HOME/.local/bin/yt-dlp" /usr/local/bin/yt-dlp
+        pip install --upgrade --break-system-packages yt-dlp || log_error "Failed to install yt-dlp."
     else
         log_info "yt-dlp is already installed."
     fi
 }
 
-# Install ani-cli
+# Install or update ani-cli
 install_ani_cli() {
     log_info "Checking ani-cli installation..."
-    if [ ! -d "$HOME/ani-cli" ]; then
-        log_info "Cloning ani-cli repository..."
-        git clone https://github.com/pystardust/ani-cli.git "$HOME/ani-cli" || log_error "Failed to clone ani-cli."
-    else
-        log_info "Updating ani-cli..."
-        cd "$HOME/ani-cli" && git pull || log_error "Failed to update ani-cli."
-    fi
 
-    log_info "Installing ani-cli..."
-    install -Dm755 "$HOME/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli."
+    # Check if ani-cli is already available in the system PATH
+    ani_cli_path=$(command -v ani-cli || echo "")
+
+    if [ -n "$ani_cli_path" ]; then
+        log_info "ani-cli found at $ani_cli_path"
+
+        # Determine if ani-cli was installed from a Git repository
+        repo_path=$(cd "$(dirname "$ani_cli_path")" && git rev-parse --show-toplevel 2>/dev/null || echo "")
+
+        if [ -n "$repo_path" ]; then
+            log_info "Updating ani-cli from $repo_path..."
+            (cd "$repo_path" && git pull) || log_error "Failed to update ani-cli."
+            install -Dm755 "$repo_path/ani-cli" /usr/bin/ani-cli || log_error "Failed to install ani-cli to /usr/bin"
+        else
+            log_info "ani-cli is installed, but not from a Git repository. Reinstalling..."
+            rm -f /usr/bin/ani-cli
+            git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
+            install -Dm755 "/tmp/ani-cli/ani-cli" /usr/bin/ani-cli || log_error "Failed to install ani-cli to /usr/bin"
+            rm -rf /tmp/ani-cli
+        fi
+    else
+        # ani-cli is not installed; proceed with fresh installation
+        log_info "ani-cli not found, cloning repository..."
+        git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
+        install -Dm755 "/tmp/ani-cli/ani-cli" /usr/bin/ani-cli || log_error "Failed to install ani-cli to /usr/bin"
+        rm -rf /tmp/ani-cli
+    fi
 }
 
-# Create necessary directories
+# Ensure the AnimeDownloads directory exists
 create_directories() {
     log_info "Creating ~/AnimeDownloads..."
     mkdir -p "$HOME/AnimeDownloads" || log_error "Failed to create directory."
 }
 
-# Configure ani-cli alias
+# Configure ani-cli alias based on user preference
 configure_ani_cli() {
-    log_info "Setting ani-cli alias..."
-    grep -qxF "alias ani='ani-cli -s gogo'" "$HOME/.profile" || echo "alias ani='ani-cli -s gogo'" >> "$HOME/.profile"
+    log_info "Asking user if they want the Download (-D) option..."
+    download_choice=$(prompt_input "Enable ani-cli download mode (-D)?")
+
+    if [ "$download_choice" = "Yes" ]; then
+        log_info "Download mode enabled."
+        alias_command="alias ani='ani-cli -D'"
+    else
+        log_info "Download mode not enabled."
+        alias_command="alias ani='ani-cli'"
+    fi
+
+    # Append alias to shell configuration files if not already set
+    for shell_config in "$HOME/.profile" "$HOME/.bashrc"; do
+        if [ -f "$shell_config" ] && ! grep -qxF "$alias_command" "$shell_config"; then
+            echo "$alias_command" >> "$shell_config"
+        fi
+    done
 }
 
-# Reload shell configuration
+# Reload shell configuration to apply changes immediately
 reload_shell_config() {
     log_info "Reloading shell configuration..."
-    . "$HOME/.profile"
+    if [ -n "$BASH_VERSION" ]; then
+        . "$HOME/.bashrc"
+    else
+        . "$HOME/.profile"
+    fi
 }
 
-# Final message
+# Print final installation summary
 print_final_message() {
     log_info "Installation complete."
     log_info "Run ani-cli with: ani"
     log_info "Select an episode and tap the 'vlc://' link to play in VLC."
-    log_info "yt-dlp is installed and ready for downloading episodes."
+    log_info "yt-dlp is installed and ready for downloading episodes (if enabled)."
     log_info "Enjoy!"
 }
 
-log_info "--- iSH set up for ani-cli ---"
-log_info "Installation complete. Enjoy using ani-cli!"
-
+# Main execution flow
 main() {
     install_packages
     install_yt_dlp
