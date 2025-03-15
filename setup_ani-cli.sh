@@ -62,19 +62,19 @@ install_ani_cli() {
         if [ -n "$repo_path" ]; then
             log_info "Updating ani-cli from $repo_path..."
             (cd "$repo_path" && git pull) || log_error "Failed to update ani-cli."
-            install -Dm755 "$repo_path/ani-cli/ani-cli" /usr/bin/ani-cli || log_error "Failed to install ani-cli to /usr/bin"
+            install -Dm755 "$repo_path/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
         else
             log_info "ani-cli is installed, but not from a Git repository. Reinstalling..."
-            rm -f /usr/bin/ani-cli
+            rm -f /usr/local/bin/ani-cli
             git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
-            install -Dm755 "/tmp/ani-cli/ani-cli/ani-cli" /usr/bin/ani-cli || log_error "Failed to install ani-cli to /usr/bin"
+            install -Dm755 "/tmp/ani-cli/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
             rm -rf /tmp/ani-cli
         fi
     else
         # ani-cli is not installed; proceed with fresh installation
         log_info "ani-cli not found, cloning repository..."
         git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
-        install -Dm755 "/tmp/ani-cli/ani-cli" /usr/bin/ani-cli || log_error "Failed to install ani-cli to /usr/bin"
+        install -Dm755 "/tmp/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
         rm -rf /tmp/ani-cli
     fi
 }
