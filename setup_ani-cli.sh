@@ -11,7 +11,21 @@ install_packages() {
     apk update || { log_error "Failed to update package list."; exit 1; }
 
     log_info "Installing required packages..."
-    apk add --no-cache bash curl ffmpeg aria2 wget yt-dlp git || { log_error "Failed to install packages."; exit 1; }
+    apk add --no-cache bash curl ffmpeg aria2 wget python3 py3-pip git || { log_error "Failed to install packages."; exit 1; }
+}
+
+# Install yt-dlp
+install_yt_dlp() {
+    log_info "Checking for yt-dlp..."
+    if ! command -v yt-dlp >/dev/null 2>&1; then
+        log_info "yt-dlp not found, installing..."
+        pip install --upgrade yt-dlp || { log_error "Failed to install yt-dlp."; exit 1; }
+
+        # Ensure yt-dlp is accessible globally
+        ln -sf "$HOME/.local/bin/yt-dlp" /usr/local/bin/yt-dlp
+    else
+        log_info "yt-dlp is already installed."
+    fi
 }
 
 # Install ani-cli
@@ -52,13 +66,15 @@ print_final_message() {
     log_info "Installation complete."
     log_info "Run ani-cli with: ani"
     log_info "Select an episode and tap the 'vlc://' link to play in VLC."
-    log_info "enjoy!"
+    log_info "yt-dlp is installed and ready for downloading episodes."
+    log_info "Enjoy!"
 }
 
-log_info "--- ish set up for ani-cli ---"
+log_info "--- iSH set up for ani-cli ---"
 
 main() {
     install_packages
+    install_yt_dlp
     install_ani_cli
     create_directories
     configure_ani_cli
