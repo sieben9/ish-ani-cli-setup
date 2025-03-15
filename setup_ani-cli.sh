@@ -23,7 +23,12 @@ prompt_input() {
     local options="Yes\nNo"
     local result
 
-    # Display options in fzf and capture user selection
+    if ! command -v fzf >/dev/null 2>&1; then
+        log_info "fzf not found, using default option (No)."
+        echo "No"
+        return
+    fi
+
     result=$(echo -e "$options" | fzf --prompt "$question: " --height=5 --border --layout=reverse)
     
     echo "$result"
@@ -35,16 +40,10 @@ install_packages() {
     apk add --no-cache --update bash curl ffmpeg aria2 wget python3 py3-pip git fzf || log_error "Failed to install packages."
 }
 
-# Install yt-dlp if not already installed
-install_yt_dlp() {
-    log_info "Checking for yt-dlp..."
-    if ! command -v yt-dlp >/dev/null 2>&1; then
-        log_info "yt-dlp not found, installing..."
-        pip install --upgrade --break-system-packages yt-dlp || log_error "Failed to install yt-dlp."
-    else
-        log_info "yt-dlp is already installed."
-    fi
-}
+# Check if fzf is installed
+if ! command -v fzf >/dev/null 2>&1; then
+    log_error "fzf is missing! Package installation may have failed."
+fi
 
 # Install or update ani-cli
 install_ani_cli() {
@@ -81,28 +80,33 @@ install_ani_cli() {
     fi
 }
 
-# Ensure the AnimeDownloads directory exists
-create_directories() {
-    log_info "Creating ~/AnimeDownloads..."
-    mkdir -p "$HOME/AnimeDownloads" || log_error "Failed to create directory."
-}
-
 # Configure ani-cli alias based on user preference
 configure_ani_cli() {
     log_info "Setting ani-cli alias..."
-    alias_command="alias ani='ani-cli'"
 
-    # Append alias to shell configuration files if not already set
-    for shell_config in "$HOME/.profile" "$HOME/.bashrc"; do
-        if [ -f "$shell_config" ] && ! grep -qxF "$alias_command" "$shell_config"; then
-            echo "$alias_command" >> "$shell_config"
-        fi
-    done
+    shell_type=$(prompt_input "Are you using Zsh? (Yes/No)")
+    if [ "$shell_type" = "Yes" ]; then
+        alias_command="echo \"alias ani='ani-cli'\" >> ~/.zshrc"
+        log_info "Alias added to ~/.zshrc"
+    else
+        alias_command="echo \"alias ani='ani-cli'\" >> ~/.profile"
+        log_info "Alias added to ~/.profile"
+    fi
+
+    # Append alias to appropriate shell configuration file
+    if [ "$shell_type" = "Yes" ]; then
+        eval "$alias_command"
+        source ~/.zshrc
+    else
+        eval "$alias_command"
+        source ~/.profile
+    fi
 }
 
 # Reload shell configuration to apply changes immediately
 reload_shell_config() {
     log_info "Reloading shell configuration..."
+    log_info "If you are using a shell other than ash, manually source your shell config file (e.g., ~/.zshrc, ~/.bashrc)."
     [ -r "$HOME/.profile" ] && . "$HOME/.profile"
 }
 
@@ -117,9 +121,7 @@ print_final_message() {
 # Main execution flow
 main() {
     install_packages
-    install_yt_dlp
     install_ani_cli
-    create_directories
     configure_ani_cli
     reload_shell_config
     print_final_message
