@@ -89,16 +89,8 @@ create_directories() {
 
 # Configure ani-cli alias based on user preference
 configure_ani_cli() {
-    log_info "Asking user if they want the Download (-D) option..."
-    download_choice=$(prompt_input "Enable ani-cli download mode (-D)?")
-
-    if [ "$download_choice" = "Yes" ]; then
-        log_info "Download mode enabled."
-        alias_command="alias ani='ani-cli -D'"
-    else
-        log_info "Download mode not enabled."
-        alias_command="alias ani='ani-cli'"
-    fi
+    log_info "Setting ani-cli alias..."
+    alias_command="alias ani='ani-cli'"
 
     # Append alias to shell configuration files if not already set
     for shell_config in "$HOME/.profile" "$HOME/.bashrc"; do
@@ -119,7 +111,6 @@ print_final_message() {
     log_info "Installation complete."
     log_info "Run ani-cli with: ani"
     log_info "Select an episode and tap the 'vlc://' link to play in VLC."
-    log_info "yt-dlp is installed and ready for downloading episodes (if enabled)."
     log_info "Enjoy!"
 }
 
