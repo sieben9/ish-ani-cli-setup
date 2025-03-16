@@ -5,6 +5,8 @@ ANSI_RED="\e[31m"
 ANSI_GREEN="\e[32m"
 ANSI_CLOSE="\e[0m"
 
+ani_cli_dir="$HOME/.ani-cli"
+
 log_info() { 
     printf "${ANSI_GREEN}[INFO]${ANSI_CLOSE} %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1"
 }
@@ -39,21 +41,35 @@ install_packages() {
     apk add --no-cache bash curl git || log_error "Failed to install packages."
 }
 
-# Install or update ani-cli
+# Update ani-cli
+update_ani_cli() {
+    log_info "Updating ani-cli..."
+
+    if [ -d "$ani_cli_dir" ]; then
+        (cd "$ani_cli_dir" && git pull) || log_error "Failed to update ani-cli."
+
+        # Copy updated binary to /usr/local/bin and set permissions
+        cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to copy ani-cli to /usr/local/bin"
+        chmod +x /usr/local/bin/ani-cli || log_error "Failed to set executable permission on /usr/local/bin/ani-cli"
+
+        log_info "ani-cli has been updated successfully!"
+        exit 0
+    else
+        log_error "ani-cli is not installed. Run the script to install it first."
+    fi
+}
+
+# Install ani-cli
 install_ani_cli() {
     log_info "Checking ani-cli installation..."
 
-    # Set installation directory
-    ani_cli_dir="$HOME/.ani-cli"
-
-    # Check if ani-cli is already installed
     if [ -d "$ani_cli_dir" ]; then
-        log_info "ani-cli found in $ani_cli_dir, updating..."
-        (cd "$ani_cli_dir" && git pull) || log_error "Failed to update ani-cli."
-    else
-        log_info "ani-cli not found, cloning repository..."
-        git clone https://github.com/pystardust/ani-cli.git "$ani_cli_dir" || log_error "Failed to clone ani-cli."
+        log_info "ani-cli is already installed. Running update instead..."
+        update_ani_cli
     fi
+
+    log_info "ani-cli not found, cloning repository..."
+    git clone https://github.com/pystardust/ani-cli.git "$ani_cli_dir" || log_error "Failed to clone ani-cli."
 
     # Copy ani-cli binary to /usr/local/bin and set permissions
     cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to copy ani-cli to /usr/local/bin"
