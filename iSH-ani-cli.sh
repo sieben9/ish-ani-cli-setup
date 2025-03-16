@@ -1,14 +1,16 @@
 #!/bin/sh
 set -eu
 
-# ani-cli setup script for VLC and optional download mode (-D)
+ANSI_RED="\e[31m"
+ANSI_GREEN="\e[32m"
+ANSI_CLOSE="\e[0m"
 
 log_info() { 
-    printf "[INFO] %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1"
+    printf "${ANSI_GREEN}[INFO]${ANSI_CLOSE} %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1"
 }
 
 log_error() { 
-    printf "[ERROR] %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1" >&2
+    printf "${ANSI_RED}[ERROR]${ANSI_CLOSE} %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1" >&2
     exit 1
 }
 
