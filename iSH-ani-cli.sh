@@ -31,13 +31,12 @@ prompt_input() {
 install_packages() {
     log_info "Checking required packages..."
 
-    # Check if required packages are already installed
     if command -v bash >/dev/null 2>&1 && command -v curl >/dev/null 2>&1 && command -v git >/dev/null 2>&1; then
         log_info "All required packages are already installed. Skipping installation."
         return
     fi
 
-    log_info "We need to install required packages / dependencies..."
+    log_info "We need to install required packages: bash, curl, git..."
     install_choice=$(prompt_input "Should we install them?")
 
     if [ "$install_choice" = "No" ]; then
@@ -45,8 +44,8 @@ install_packages() {
         exit 0
     fi
 
-    log_info "Installing required packages..."
-    apk add --no-cache bash curl git || log_error "Failed to install packages."
+    log_info "Installing required packages: bash, curl, git..."
+    apk add --no-cache bash curl git || log_error "Failed to install packages. Try running: apk add --no-cache bash curl git manually."
 }
 
 # Update ani-cli
@@ -62,7 +61,7 @@ update_ani_cli() {
         if [ "$backup_choice" = "Yes" ]; then
             # Remove old backup if it exists
             if [ -f "/usr/local/bin/ani-cli.bak" ]; then
-                log_info "Removing old backup..."
+                log_info "Removing old backup: ani-cli.bak"
                 rm -f /usr/local/bin/ani-cli.bak
             fi
 
@@ -117,8 +116,13 @@ print_final_message() {
 }
 
 main() {
-    install_packages
-    install_ani_cli
+    if [ -d "$ani_cli_dir" ]; then
+        log_info "ani-cli is already installed. Checking for updates..."
+        update_ani_cli
+    else
+        install_packages
+        install_ani_cli
+    fi
     print_final_message
 }
 
