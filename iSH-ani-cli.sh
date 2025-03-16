@@ -75,18 +75,11 @@ configure_ani_cli() {
     fi
 }
 
-# Reload shell configuration to apply changes immediately
-reload_shell_config() {
-    log_info "Reloading shell configuration..."
-    log_info "If you are using a shell other than ash, manually source your shell config file (e.g., ~/.zshrc, ~/.bashrc)."
-    [ -r "$HOME/.profile" ] && . "$HOME/.profile"
-}
-
 # Print final installation summary
 print_final_message() {
     log_info "Installation complete."
     log_info "Run ani-cli with: ani"
-    log_info "Select an episode and tap the 'vlc://' link to play in VLC."
+    log_info "Select an episode and tap 'Tap to open VLC' to play your ani in VLC."
     log_info "Enjoy!"
 }
 
@@ -94,7 +87,6 @@ main() {
     install_packages
     install_ani_cli
     configure_ani_cli
-    reload_shell_config
     print_final_message
 }
 
