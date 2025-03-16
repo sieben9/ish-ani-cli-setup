@@ -57,6 +57,7 @@ update_ani_cli() {
         (cd "$ani_cli_dir" && git pull) || log_error "Failed to update ani-cli."
 
         # Copy updated binary to /usr/local/bin and set permissions
+        log_info "Copying ani-cli as 'ani' to /usr/local/bin"
         cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to copy ani-cli to /usr/local/bin"
         chmod +x /usr/local/bin/ani-cli || log_error "Failed to set executable permission on /usr/local/bin/ani-cli"
 
