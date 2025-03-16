@@ -8,7 +8,7 @@ ANSI_CLOSE="\e[0m"
 ani_cli_dir="$HOME/.ani-cli"
 
 log_info() { 
-    printf "${ANSI_GREEN}[INFO]${ANSI_CLOSE} %s\n" "$(date '+%Y-%m-%d %H:%M:%S') $1"
+    printf "${ANSI_GREEN}[INFO]${ANSI_CLOSE} %s\n" "$1"
 }
 
 log_error() { 
