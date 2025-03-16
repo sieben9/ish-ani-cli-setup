@@ -25,8 +25,16 @@ prompt_input() {
 
 # Install required system packages
 install_packages() {
-    log_info "Updating and installing required packages..."
-    apk add --no-cache --update bash curl ffmpeg aria2 wget python3 py3-pip git fzf || log_error "Failed to install packages."
+    log_info "We need to install required packages / dependencies..."
+    install_choice=$(prompt_input "Should we install them?")
+
+    if [ "$install_choice" = "No" ]; then
+        log_info "Aborting..."
+        exit 0
+    fi
+
+    log_info "Installing required packages..."
+    apk add --no-cache bash curl git || log_error "Failed to install packages."
 }
 
 # Install or update ani-cli
@@ -52,29 +60,6 @@ install_ani_cli() {
     log_info "ani-cli is now installed and available as a command."
 }
 
-# Configure ani-cli alias based on user preference
-configure_ani_cli() {
-    log_info "Setting ani-cli alias..."
-
-    shell_type=$(echo -e "Zsh\nBash" | fzf --prompt "Select your shell: " --height=5 --border --layout=reverse)
-    if [ "$shell_type" = "Zsh" ]; then
-        alias_command="echo \"alias ani='ani-cli'\" >> ~/.zshrc"
-        log_info "Alias added to ~/.zshrc"
-    else
-        alias_command="echo \"alias ani='ani-cli'\" >> ~/.profile"
-        log_info "Alias added to ~/.profile"
-    fi
-
-    # Append alias to appropriate shell configuration file
-    if [ "$shell_type" = "Zsh" ]; then
-        eval "$alias_command"
-        source ~/.zshrc
-    else
-        eval "$alias_command"
-        source ~/.profile
-    fi
-}
-
 # Print final installation summary
 print_final_message() {
     log_info "Installation complete."
@@ -86,7 +71,6 @@ print_final_message() {
 main() {
     install_packages
     install_ani_cli
-    configure_ani_cli
     print_final_message
 }
 
