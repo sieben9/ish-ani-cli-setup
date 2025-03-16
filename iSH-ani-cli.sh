@@ -56,10 +56,27 @@ update_ani_cli() {
     if [ -d "$ani_cli_dir" ]; then
         (cd "$ani_cli_dir" && git pull) || log_error "Failed to update ani-cli."
 
-        # Copy updated binary to /usr/local/bin and set permissions
-        log_info "Copying ani-cli as 'ani' to /usr/local/bin"
+        # Ask the user if they want to create a backup
+        backup_choice=$(prompt_input "Would you like to create a backup of the current ani-cli version?")
+
+        if [ "$backup_choice" = "Yes" ]; then
+            # Remove old backup if it exists
+            if [ -f "/usr/local/bin/ani-cli.bak" ]; then
+                log_info "Removing old backup..."
+                rm -f /usr/local/bin/ani-cli.bak
+            fi
+
+            # Create a new backup with timestamp
+            timestamp=$(date +"%Y%m%d-%H%M%S")
+            log_info "Creating backup: ani-cli.bak.$timestamp..."
+            cp /usr/local/bin/ani-cli "/usr/local/bin/ani-cli.bak.$timestamp"
+        fi
+
+        log_info "Copying ani-cli as 'ani-cli' and 'ani' to /usr/local/bin"
         cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to copy ani-cli to /usr/local/bin"
+        cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani || log_error "Failed to copy ani-cli as 'ani'"
         chmod +x /usr/local/bin/ani-cli || log_error "Failed to set executable permission on /usr/local/bin/ani-cli"
+        chmod +x /usr/local/bin/ani || log_error "Failed to set executable permission on /usr/local/bin/ani"
 
         log_info "ani-cli has been updated successfully!"
         exit 0
@@ -80,11 +97,13 @@ install_ani_cli() {
     log_info "ani-cli not found, cloning repository..."
     git clone https://github.com/pystardust/ani-cli.git "$ani_cli_dir" || log_error "Failed to clone ani-cli."
 
-    # Copy ani-cli binary to /usr/local/bin and set permissions
+    log_info "Copying ani-cli as 'ani-cli' and 'ani' to /usr/local/bin"
     cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to copy ani-cli to /usr/local/bin"
+    cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani || log_error "Failed to copy ani-cli as 'ani'"
     chmod +x /usr/local/bin/ani-cli || log_error "Failed to set executable permission on /usr/local/bin/ani-cli"
+    chmod +x /usr/local/bin/ani || log_error "Failed to set executable permission on /usr/local/bin/ani"
 
-    log_info "ani-cli is now installed and available as a command."
+    log_info "ani-cli is now installed and available as 'ani' command."
 }
 
 # Print final installation summary
@@ -92,6 +111,8 @@ print_final_message() {
     log_info "Installation complete."
     log_info "Run ani-cli with: ani"
     log_info "Select an episode and tap 'Tap to open VLC' to play your ani in VLC."
+    log_info "You need to have VLC installed to use ani. Open VLC once before using ani-cli to avoid playback issues."
+    log_info "VLC can be downloaded from the App Store if you don't have it installed."
     log_info "Enjoy!"
 }
 
