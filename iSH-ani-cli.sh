@@ -33,35 +33,23 @@ install_packages() {
 install_ani_cli() {
     log_info "Checking ani-cli installation..."
 
-    # Check if ani-cli is already available in the system PATH
-    ani_cli_path=$(command -v ani-cli || echo "")
+    # Set installation directory
+    ani_cli_dir="$HOME/.ani-cli"
 
-    if [ -n "$ani_cli_path" ]; then
-        log_info "ani-cli found at $ani_cli_path"
-
-        # Determine if ani-cli was installed from a Git repository
-        repo_path=$(cd "$(dirname "$ani_cli_path")" && git rev-parse --show-toplevel 2>/dev/null || echo "")
-
-        if [ -n "$repo_path" ]; then
-            log_info "Updating ani-cli from $repo_path..."
-            (cd "$repo_path" && git pull) || log_error "Failed to update ani-cli."
-            install -Dm755 "$repo_path/ani-cli/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
-        else
-            log_info "ani-cli is installed, but not from a Git repository. Reinstalling..."
-            rm -f /usr/local/bin/ani-cli
-            [ -d /tmp/ani-cli ] && rm -rf /tmp/ani-cli
-            git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
-            cp /tmp/ani-cli/ani-cli /usr/local/bin/ani-cli && chmod +x /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
-            rm -rf /tmp/ani-cli
-        fi
+    # Check if ani-cli is already installed
+    if [ -d "$ani_cli_dir" ]; then
+        log_info "ani-cli found in $ani_cli_dir, updating..."
+        (cd "$ani_cli_dir" && git pull) || log_error "Failed to update ani-cli."
     else
-        # ani-cli is not installed; proceed with fresh installation
         log_info "ani-cli not found, cloning repository..."
-        [ -d /tmp/ani-cli ] && rm -rf /tmp/ani-cli
-        git clone https://github.com/pystardust/ani-cli.git /tmp/ani-cli || log_error "Failed to clone ani-cli."
-        cp /tmp/ani-cli/ani-cli /usr/local/bin/ani-cli && chmod +x /usr/local/bin/ani-cli || log_error "Failed to install ani-cli to /usr/local/bin"
-        rm -rf /tmp/ani-cli
+        git clone https://github.com/pystardust/ani-cli.git "$ani_cli_dir" || log_error "Failed to clone ani-cli."
     fi
+
+    # Copy ani-cli binary to /usr/local/bin and set permissions
+    cp "$ani_cli_dir/ani-cli" /usr/local/bin/ani-cli || log_error "Failed to copy ani-cli to /usr/local/bin"
+    chmod +x /usr/local/bin/ani-cli || log_error "Failed to set executable permission on /usr/local/bin/ani-cli"
+
+    log_info "ani-cli is now installed and available as a command."
 }
 
 # Configure ani-cli alias based on user preference
