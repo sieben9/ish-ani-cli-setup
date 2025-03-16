@@ -29,6 +29,14 @@ prompt_input() {
 
 # Install required system packages
 install_packages() {
+    log_info "Checking required packages..."
+
+    # Check if required packages are already installed
+    if command -v bash >/dev/null 2>&1 && command -v curl >/dev/null 2>&1 && command -v git >/dev/null 2>&1; then
+        log_info "All required packages are already installed. Skipping installation."
+        return
+    fi
+
     log_info "We need to install required packages / dependencies..."
     install_choice=$(prompt_input "Should we install them?")
 
