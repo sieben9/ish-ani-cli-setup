@@ -18,12 +18,6 @@ prompt_input() {
     local options="Yes\nNo"
     local result
 
-    if ! command -v fzf >/dev/null 2>&1; then
-        log_info "fzf not found, using default option (No)."
-        echo "No"
-        return
-    fi
-
     result=$(echo -e "$options" | fzf --prompt "$question: " --height=5 --border --layout=reverse)
     
     echo "$result"
@@ -74,8 +68,8 @@ install_ani_cli() {
 configure_ani_cli() {
     log_info "Setting ani-cli alias..."
 
-    shell_type=$(prompt_input "Are you using Zsh? (Yes/No)")
-    if [ "$shell_type" = "Yes" ]; then
+    shell_type=$(echo -e "Zsh\nBash" | fzf --prompt "Select your shell: " --height=5 --border --layout=reverse)
+    if [ "$shell_type" = "Zsh" ]; then
         alias_command="echo \"alias ani='ani-cli'\" >> ~/.zshrc"
         log_info "Alias added to ~/.zshrc"
     else
@@ -84,7 +78,7 @@ configure_ani_cli() {
     fi
 
     # Append alias to appropriate shell configuration file
-    if [ "$shell_type" = "Yes" ]; then
+    if [ "$shell_type" = "Zsh" ]; then
         eval "$alias_command"
         source ~/.zshrc
     else
@@ -125,7 +119,7 @@ fi
 
 # Check if fzf is installed
 if ! command -v fzf >/dev/null 2>&1; then
-    log_error "fzf is not installed! Run: apk add fzf"
+    log_error "fzf is required but not installed. Run: apk add fzf"
 fi
 
 main
