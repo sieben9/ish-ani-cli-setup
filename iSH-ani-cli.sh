@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
 
-ANSI_RED="\e[31m"
-ANSI_GREEN="\e[32m"
-ANSI_CLOSE="\e[0m"
+ANSI_RED="\033[31m"
+ANSI_GREEN="\033[32m"
+ANSI_CLOSE="\033[0m"
 
 ani_cli_dir="$HOME/.ani-cli"
 
@@ -18,13 +18,12 @@ log_error() {
 
 # fzf-based function for interactive Yes/No prompts
 prompt_input() {
-    local question="$1"
-    local options="Yes\nNo"
-    local result
-
-    result=$(echo -e "$options" | fzf --prompt "$question: " --height=5 --border --layout=reverse)
+    prompt_question="$1"
+    prompt_options="Yes
+No"
+    prompt_result=$(printf "%s" "$prompt_options" | fzf --prompt "$prompt_question: " --height=5 --border --layout=reverse)
     
-    echo "$result"
+    printf "%s" "$prompt_result"
 }
 
 # Install required system packages
